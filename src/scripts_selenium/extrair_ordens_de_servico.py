@@ -74,7 +74,7 @@ def aguardar_download_e_renomear_arquivo(diretorio_destino: str, nome_final: str
 
 
 # ── Extração ─────────────────────────────────────────────────────────────────
-def executar_extracao(logger: LoggerExtracao, data_inicio: str = None, data_fim: str = None) -> None:
+def executar_extracao(logger: LoggerExtracao, data_inicio: str = None, data_fim: str = None, tipo: str = "incremental") -> None:
     navegador = configurar_navegador(DIRETORIO_DESTINO)
     espera    = WebDriverWait(navegador, 15)
 
@@ -119,7 +119,7 @@ def executar_extracao(logger: LoggerExtracao, data_inicio: str = None, data_fim:
         # 7. Aguardar download, renomear e confirmar
         caminho = aguardar_download_e_renomear_arquivo(DIRETORIO_DESTINO, NOME_ARQUIVO)
         registros_retornados = sum(1 for _ in open(caminho, "rb")) - 1
-        detalhes = json.dumps({"periodo_consulta": {"data_inicio": data_inicio, "data_fim": data_fim}})
+        detalhes = json.dumps({"tipo": tipo, "periodo_consulta": {"data_inicio": data_inicio, "data_fim": data_fim}})
         logger.registrar_sucesso("ordens_de_servico", caminho, registros_retornados, detalhes)
         print(f"[OK] Arquivo salvo em: {caminho}")
         if data_inicio or data_fim:

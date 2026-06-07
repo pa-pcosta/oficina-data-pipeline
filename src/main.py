@@ -24,16 +24,19 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.carga_inicial:
+        tipo = "carga_completa"
         data_inicio = None
         data_fim = None
     else:
+        tipo = "incremental"
         hoje = date.today()
-        data_inicio = (hoje - timedelta(days=7)).strftime("%d/%m/%Y")
-        data_fim = hoje.strftime("%d/%m/%Y")
+        ultimo_sabado = hoje - timedelta(days=(hoje.weekday() + 2) % 7 or 7)
+        data_inicio = (ultimo_sabado - timedelta(days=6)).strftime("%d/%m/%Y")
+        data_fim = ultimo_sabado.strftime("%d/%m/%Y")
 
     logger = LoggerCSV(metodo="selenium")
 
     for script in DIRETORIO_SCRIPTS.glob("*.py"):
         print(f"\n[→] Iniciando {script.name}...")
-        importar_script(script).executar_extracao(logger, data_inicio=data_inicio, data_fim=data_fim)
+        importar_script(script).executar_extracao(logger, data_inicio=data_inicio, data_fim=data_fim, tipo=tipo)
         print(f"[OK] {script.name} concluído")
