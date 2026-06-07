@@ -5,7 +5,7 @@ import shutil
 from datetime import date, timedelta
 from pathlib import Path
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -16,7 +16,7 @@ from selenium.webdriver.support.ui import Select
 from webdriver_manager.chrome import ChromeDriverManager
 
 # ── Carregar variáveis de ambiente ───────────────────────────────────────────
-load_dotenv(Path(__file__).parent.parent / ".env")
+load_dotenv(find_dotenv())
 
 URL_LOGIN         = os.environ["SISTEMA_LOGIN_URL"]
 ID_OFICINA        = os.environ["SISTEMA_ID_OFICINA"]
@@ -25,7 +25,7 @@ SENHA             = os.environ["SISTEMA_SENHA"]
 
 URL_RELATORIO     = os.environ["SISTEMA_BASE_URL"] + "/P_LISTAR_OS.ASP"
 
-DIRETORIO_DESTINO = os.path.join(os.environ["DOWNLOAD_BASE"], "itens_ordens_de_servico")
+DIRETORIO_DESTINO = os.path.join(os.environ["DOWNLOAD_BASE_SELENIUM"], "itens_ordens_de_servico")
 
 hoje         = date.today()
 # DATA_FIM     = hoje.strftime("%d/%m/%Y")

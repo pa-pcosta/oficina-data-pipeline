@@ -5,7 +5,7 @@ import shutil
 from datetime import date
 from pathlib import Path
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
 # ── Carregar variáveis de ambiente ───────────────────────────────────────────
-load_dotenv(Path(__file__).parent.parent / ".env")
+load_dotenv(find_dotenv())
 
 URL_LOGIN         = os.environ["SISTEMA_LOGIN_URL"]
 ID_OFICINA        = os.environ["SISTEMA_ID_OFICINA"]
@@ -24,7 +24,7 @@ SENHA             = os.environ["SISTEMA_SENHA"]
 
 URL_RELATORIO     = os.environ["SISTEMA_BASE_URL"] + "/P_CONFIGURA_SERVICOS.asp?PG=1&ORDENAR=CODIGO&BUSCA="
 
-DIRETORIO_DESTINO = os.path.join(os.environ["DOWNLOAD_BASE"], "servicos")
+DIRETORIO_DESTINO = os.path.join(os.environ["DOWNLOAD_BASE_SELENIUM"], "servicos")
 NOME_ARQUIVO      = f"{date.today().isoformat()}.csv"
 
 
