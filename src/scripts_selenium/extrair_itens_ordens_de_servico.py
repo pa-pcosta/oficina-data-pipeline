@@ -93,10 +93,9 @@ def executar_extracao(logger: LoggerExtracao, data_inicio: str = None, data_fim:
         # 2. Navegar até o relatório
         navegador.get(URL_RELATORIO)
 
-        # 3. Verificar que o filtro está em "Entrada" (ver docs/decisao_filtro_data_os.md)
+        # 3. Selecionar filtro por data de saída
         select = Select(espera.until(EC.presence_of_element_located((By.ID, "DATA_TIPO"))))
-        assert select.first_selected_option.text.strip() == "Entrada", \
-            "Filtro de data não está em 'Entrada' — verifique o formulário"
+        select.select_by_value("2")
 
         # 4. Preencher datas (se None, deixa em branco — sistema retorna tudo)
         if data_inicio:
