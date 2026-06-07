@@ -4,7 +4,6 @@ import time
 import shutil
 from datetime import date
 from pathlib import Path
-
 from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -14,26 +13,26 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-# ── Variáveis de ambiente ────────────────────────────────────────────────────
+# ── Carregar variáveis de ambiente ───────────────────────────────────────────
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-LOGIN_URL    = os.environ["SISTEMA_LOGIN_URL"]
-ID_OFICINA   = os.environ["SISTEMA_ID_OFICINA"]
-USUARIO      = os.environ["SISTEMA_USUARIO"]
-SENHA        = os.environ["SISTEMA_SENHA"]
+URL_LOGIN         = os.environ["SISTEMA_LOGIN_URL"]
+ID_OFICINA        = os.environ["SISTEMA_ID_OFICINA"]
+USUARIO           = os.environ["SISTEMA_USUARIO"]
+SENHA             = os.environ["SISTEMA_SENHA"]
 
-RELATORIO_URL = os.environ["SISTEMA_BASE_URL"] + "/P_LISTAR_PLACAS.ASP"
+URL_RELATORIO     = os.environ["SISTEMA_BASE_URL"] + "/P_LISTAR_PLACAS.ASP"
 
-DOWNLOAD_DIR = os.path.join(os.environ["DOWNLOAD_BASE"], "motocicletas")
-NOME_ARQUIVO = f"{date.today().isoformat()}.csv"
+DIRETORIO_DESTINO = os.path.join(os.environ["DOWNLOAD_BASE"], "motocicletas")
+NOME_ARQUIVO      = f"{date.today().isoformat()}.csv"
 
 
-# ── Utilitários ──────────────────────────────────────────────────────────────
-def configurar_driver(download_dir: str) -> webdriver.Chrome:
-    os.makedirs(download_dir, exist_ok=True)
+# ── Configuração do navegador e download ─────────────────────────────────────
+def configurar_navegador(diretorio_destino: str) -> webdriver.Chrome:
+    os.makedirs(diretorio_destino, exist_ok=True)
     options = Options()
     options.add_experimental_option("prefs", {
-        "download.default_directory": os.path.abspath(download_dir),
+        "download.default_directory": os.path.abspath(diretorio_destino),
         "download.prompt_for_download": False,
         "download.directory_upgrade": True,
         "safebrowsing.enabled": True,
@@ -45,16 +44,16 @@ def configurar_driver(download_dir: str) -> webdriver.Chrome:
     )
 
 
-def aguardar_e_renomear(download_dir: str, nome_final: str, timeout: int = 30) -> str:
+def aguardar_download_e_renomear_arquivo(diretorio_destino: str, nome_final: str, timeout: int = 30) -> str:
     inicio = time.time()
     while True:
         arquivos = [
-            f for f in glob.glob(os.path.join(download_dir, "*.csv"))
+            f for f in glob.glob(os.path.join(diretorio_destino, "*.csv"))
             if not f.endswith(".crdownload")
         ]
         if arquivos:
             arquivo_baixado = max(arquivos, key=os.path.getctime)
-            destino = os.path.join(download_dir, nome_final)
+            destino = os.path.join(diretorio_destino, nome_final)
             shutil.move(arquivo_baixado, destino)
             return destino
         if time.time() - inicio > timeout:
@@ -63,35 +62,35 @@ def aguardar_e_renomear(download_dir: str, nome_final: str, timeout: int = 30) -
 
 
 # ── Extração ─────────────────────────────────────────────────────────────────
-def run_extraction():
-    driver = configurar_driver(DOWNLOAD_DIR)
-    wait   = WebDriverWait(driver, 15)
+def executar_extracao():
+    navegador = configurar_navegador(DIRETORIO_DESTINO)
+    espera    = WebDriverWait(navegador, 15)
 
     try:
         # 1. Login
-        driver.get(LOGIN_URL)
-        wait.until(EC.presence_of_element_located((By.ID, "chave"))).send_keys(ID_OFICINA)
+        navegador.get(URL_LOGIN)
+        espera.until(EC.presence_of_element_located((By.ID, "chave"))).send_keys(ID_OFICINA)
         time.sleep(0.5)
-        driver.find_element(By.ID, "usuario").send_keys(USUARIO)
+        navegador.find_element(By.ID, "usuario").send_keys(USUARIO)
         time.sleep(0.5)
-        driver.find_element(By.ID, "senha").send_keys(SENHA)
+        navegador.find_element(By.ID, "senha").send_keys(SENHA)
         time.sleep(0.5)
-        driver.find_element(By.ID, "btnLogar").click()
-        wait.until(lambda d: "login" not in d.current_url.lower())
+        navegador.find_element(By.ID, "btnLogar").click()
+        espera.until(lambda d: "login" not in d.current_url.lower())
 
         # 2. Navegar até o relatório
-        driver.get(RELATORIO_URL)
+        navegador.get(URL_RELATORIO)
 
         # 3. Exportar — chama a função diretamente, sem abrir o dropdown
-        driver.execute_script("exportarCSV();")
+        navegador.execute_script("exportarCSV();")
 
         # 4. Aguardar download, renomear e confirmar
-        caminho = aguardar_e_renomear(DOWNLOAD_DIR, NOME_ARQUIVO)
+        caminho = aguardar_download_e_renomear_arquivo(DIRETORIO_DESTINO, NOME_ARQUIVO)
         print(f"[OK] Arquivo salvo em: {caminho}")
 
     finally:
-        driver.quit()
+        navegador.quit()
 
 
 if __name__ == "__main__":
-    run_extraction()
+    executar_extracao()
