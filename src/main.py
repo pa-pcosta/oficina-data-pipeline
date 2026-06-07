@@ -1,5 +1,7 @@
+import argparse
 import importlib.util
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -17,10 +19,21 @@ def importar_script(caminho: Path):
 
 
 if __name__ == "__main__":
-    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--carga-inicial", action="store_true")
+    args = parser.parse_args()
+
+    if args.carga_inicial:
+        data_inicio = None
+        data_fim = None
+    else:
+        hoje = date.today()
+        data_inicio = (hoje - timedelta(days=7)).strftime("%d/%m/%Y")
+        data_fim = hoje.strftime("%d/%m/%Y")
+
     logger = LoggerCSV(metodo="selenium")
-    
+
     for script in DIRETORIO_SCRIPTS.glob("*.py"):
         print(f"\n[→] Iniciando {script.name}...")
-        importar_script(script).executar_extracao(logger)
+        importar_script(script).executar_extracao(logger, data_inicio=data_inicio, data_fim=data_fim)
         print(f"[OK] {script.name} concluído")

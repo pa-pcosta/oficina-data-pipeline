@@ -31,12 +31,7 @@ URL_RELATORIO     = os.environ["SISTEMA_BASE_URL"] + "/P_LISTAR_OS.ASP"
 
 DIRETORIO_DESTINO = os.path.join(os.environ["DOWNLOAD_BASE_SELENIUM"], "ordens_de_servico")
 
-hoje         = date.today()
-# DATA_FIM     = hoje.strftime("%d/%m/%Y")
-# DATA_INICIO  = (hoje - timedelta(days=7)).strftime("%d/%m/%Y")
-DATA_FIM    = "31/01/2026"
-DATA_INICIO = "01/01/2026"
-NOME_ARQUIVO = f"{hoje.isoformat()}.csv"
+NOME_ARQUIVO = f"{date.today().isoformat()}.csv"
 
 
 # ── Configuração do navegador e download ─────────────────────────────────────
@@ -78,7 +73,7 @@ def aguardar_download_e_renomear_arquivo(diretorio_destino: str, nome_final: str
 
 
 # ── Extração ─────────────────────────────────────────────────────────────────
-def executar_extracao(logger: LoggerExtracao) -> None:
+def executar_extracao(logger: LoggerExtracao, data_inicio: str = None, data_fim: str = None) -> None:
     navegador = configurar_navegador(DIRETORIO_DESTINO)
     espera    = WebDriverWait(navegador, 15)
 
@@ -103,11 +98,13 @@ def executar_extracao(logger: LoggerExtracao) -> None:
             "Filtro de data não está em 'Entrada' — verifique o formulário"
 #        input("[PAUSA] Filtro verificado — pressione Enter para preencher datas...")
 
-        # 4. Preencher datas
-        navegador.find_element(By.ID, "DATA_INICIAL").send_keys(DATA_INICIO)
-        time.sleep(0.5)
-        navegador.find_element(By.ID, "DATA_FINAL").send_keys(DATA_FIM)
-        time.sleep(0.5)
+        # 4. Preencher datas (se None, deixa em branco — sistema retorna tudo)
+        if data_inicio:
+            navegador.find_element(By.ID, "DATA_INICIAL").send_keys(data_inicio)
+            time.sleep(0.5)
+        if data_fim:
+            navegador.find_element(By.ID, "DATA_FINAL").send_keys(data_fim)
+            time.sleep(0.5)
 #        input("[PAUSA] Datas preenchidas — pressione Enter para buscar...")
 
         # 5. Buscar — sem isso o export ignora o filtro e baixa todas as OSs
@@ -123,7 +120,8 @@ def executar_extracao(logger: LoggerExtracao) -> None:
         linhas = sum(1 for _ in open(caminho, "rb")) - 1
         logger.registrar_sucesso("ordens_de_servico", caminho, linhas)
         print(f"[OK] Arquivo salvo em: {caminho}")
-        print(f"[OK] Período extraído: {DATA_INICIO} → {DATA_FIM}")
+        if data_inicio or data_fim:
+            print(f"[OK] Período extraído: {data_inicio} → {data_fim}")
 
     except Exception as e:
         logger.registrar_erro("ordens_de_servico", str(e))
