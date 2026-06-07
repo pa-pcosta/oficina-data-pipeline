@@ -1,0 +1,6 @@
+from typing import Protocol
+
+
+class LoggerExtracao(Protocol):
+    def registrar_sucesso(self, entidade: str, caminho: str, linhas: int) -> None: ...
+    def registrar_erro(self, entidade: str, erro: str) -> None: ...

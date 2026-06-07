@@ -1,10 +1,15 @@
 import os
+import sys
 import glob
 import time
 import shutil
 from datetime import date
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from dotenv import load_dotenv, find_dotenv
+from logs.logger import LoggerExtracao
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -21,9 +26,9 @@ ID_OFICINA        = os.environ["SISTEMA_ID_OFICINA"]
 USUARIO           = os.environ["SISTEMA_USUARIO"]
 SENHA             = os.environ["SISTEMA_SENHA"]
 
-URL_RELATORIO     = os.environ["SISTEMA_BASE_URL"] + "/P_LISTAR_PLACAS.ASP"
+URL_RELATORIO     = os.environ["SISTEMA_BASE_URL"] + "/P_LISTAR_CLIENTES.ASP"
 
-DIRETORIO_DESTINO = os.path.join(os.environ["DOWNLOAD_BASE_SELENIUM"], "motocicletas")
+DIRETORIO_DESTINO = os.path.join(os.environ["DOWNLOAD_BASE_SELENIUM"], "clientes")
 NOME_ARQUIVO      = f"{date.today().isoformat()}.csv"
 
 
@@ -62,7 +67,7 @@ def aguardar_download_e_renomear_arquivo(diretorio_destino: str, nome_final: str
 
 
 # ── Extração ─────────────────────────────────────────────────────────────────
-def executar_extracao():
+def executar_extracao(logger: LoggerExtracao) -> None:
     navegador = configurar_navegador(DIRETORIO_DESTINO)
     espera    = WebDriverWait(navegador, 15)
 
@@ -76,21 +81,31 @@ def executar_extracao():
         navegador.find_element(By.ID, "senha").send_keys(SENHA)
         time.sleep(0.5)
         navegador.find_element(By.ID, "btnLogar").click()
+
+        # Aguarda sair da página de login
         espera.until(lambda d: "login" not in d.current_url.lower())
+#        input("[PAUSA] Login OK — pressione Enter para navegar ao relatório...")
 
         # 2. Navegar até o relatório
         navegador.get(URL_RELATORIO)
+#        input("[PAUSA] Relatório carregado — pressione Enter para exportar...")
 
         # 3. Exportar — chama a função diretamente, sem abrir o dropdown
         navegador.execute_script("exportarCSV();")
 
         # 4. Aguardar download, renomear e confirmar
         caminho = aguardar_download_e_renomear_arquivo(DIRETORIO_DESTINO, NOME_ARQUIVO)
+        linhas = sum(1 for _ in open(caminho, "rb")) - 1
+        logger.registrar_sucesso("clientes", caminho, linhas)
         print(f"[OK] Arquivo salvo em: {caminho}")
 
+    except Exception as e:
+        logger.registrar_erro("clientes", str(e))
+        raise
     finally:
         navegador.quit()
 
 
 if __name__ == "__main__":
-    executar_extracao()
+    from logs.logger_csv import LoggerCSV
+    executar_extracao(LoggerCSV(metodo="selenium"))
