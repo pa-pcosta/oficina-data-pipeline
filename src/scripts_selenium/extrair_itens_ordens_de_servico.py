@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import glob
@@ -114,8 +115,9 @@ def executar_extracao(logger: LoggerExtracao, data_inicio: str = None, data_fim:
 
         # 7. Aguardar download, renomear e confirmar
         caminho = aguardar_download_e_renomear_arquivo(DIRETORIO_DESTINO, NOME_ARQUIVO)
-        linhas = sum(1 for _ in open(caminho, "rb")) - 1
-        logger.registrar_sucesso("itens_ordens_de_servico", caminho, linhas)
+        registros_retornados = sum(1 for _ in open(caminho, "rb")) - 1
+        detalhes = json.dumps({"periodo_consulta": {"data_inicio": data_inicio, "data_fim": data_fim}})
+        logger.registrar_sucesso("itens_ordens_de_servico", caminho, registros_retornados, detalhes)
         print(f"[OK] Arquivo salvo em: {caminho}")
         if data_inicio or data_fim:
             print(f"[OK] Período extraído: {data_inicio} → {data_fim}")

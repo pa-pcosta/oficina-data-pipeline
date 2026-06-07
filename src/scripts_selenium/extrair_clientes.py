@@ -95,8 +95,8 @@ def executar_extracao(logger: LoggerExtracao, data_inicio: str = None, data_fim:
 
         # 4. Aguardar download, renomear e confirmar
         caminho = aguardar_download_e_renomear_arquivo(DIRETORIO_DESTINO, NOME_ARQUIVO)
-        linhas = sum(1 for _ in open(caminho, "rb")) - 1
-        logger.registrar_sucesso("clientes", caminho, linhas)
+        registros_retornados = sum(1 for _ in open(caminho, "rb")) - 1
+        logger.registrar_sucesso("clientes", caminho, registros_retornados)
         print(f"[OK] Arquivo salvo em: {caminho}")
 
     except Exception as e:
