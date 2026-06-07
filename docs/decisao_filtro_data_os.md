@@ -42,7 +42,7 @@ A janela de 7 dias nas extrações recorrentes garante que OSs abertas há menos
 O sistema já define "Entrada" como opção padrão do filtro. O script verifica isso programaticamente antes de prosseguir:
 
 ```python
-select = Select(driver.find_element(By.ID, "DATA_TIPO"))
+select = Select(espera.until(EC.presence_of_element_located((By.ID, "DATA_TIPO"))))
 assert select.first_selected_option.text.strip() == "Entrada", \
     "Filtro de data não está em 'Entrada' — verifique o formulário"
 ```
