@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 import sys
@@ -27,9 +28,10 @@ ID_OFICINA        = os.environ["SISTEMA_ID_OFICINA"]
 USUARIO           = os.environ["SISTEMA_USUARIO"]
 SENHA             = os.environ["SISTEMA_SENHA"]
 
-URL_RELATORIO     = os.environ["SISTEMA_BASE_URL"] + "/P_CONFIGURA_SERVICOS.asp?PG=1&ORDENAR=CODIGO&BUSCA="
+URL_BASE          = os.environ["SISTEMA_BASE_URL"]
+URL_EXPORTACAO    = f"{URL_BASE}/ws_call/EXPORTAR_CSV.asp?BUSCA_PRODUTO=&ORDENAR_PRODUTO=&ACAO=EXPORTAR_PRODUTOS&POR_PRODUTO=&pg="
 
-DIRETORIO_DESTINO = os.path.join(os.environ["DOWNLOAD_BASE_SELENIUM"], "servicos")
+DIRETORIO_DESTINO = os.path.join(os.environ["DOWNLOAD_BASE_SELENIUM"], "produtos")
 NOME_ARQUIVO      = f"{date.today().isoformat()}.csv"
 
 
@@ -68,6 +70,11 @@ def aguardar_download_e_renomear_arquivo(diretorio_destino: str, nome_final: str
 
 
 # ── Extração ─────────────────────────────────────────────────────────────────
+def main() -> None:
+    from logs.logger_csv import LoggerCSV
+    executar_extracao(LoggerCSV(metodo="selenium"))
+
+
 def executar_extracao(logger: LoggerExtracao, data_inicio: str = None, data_fim: str = None, tipo: str = "incremental") -> None:
     navegador = configurar_navegador(DIRETORIO_DESTINO)
     espera    = WebDriverWait(navegador, 15)
@@ -84,26 +91,22 @@ def executar_extracao(logger: LoggerExtracao, data_inicio: str = None, data_fim:
         navegador.find_element(By.ID, "btnLogar").click()
         espera.until(lambda d: "login" not in d.current_url.lower())
 
-        # 2. Navegar até o relatório
-        navegador.get(URL_RELATORIO)
+        # 2. Navegar para a URL de exportação — o download dispara automaticamente
+        navegador.get(URL_EXPORTACAO)
 
-        # 3. Exportar
-        espera.until(EC.presence_of_element_located((By.ID, "exportcsv")))
-        navegador.execute_script("exportarCSV();")
-
-        # 4. Aguardar download, renomear e confirmar
+        # 3. Aguardar download, renomear e confirmar
         caminho = aguardar_download_e_renomear_arquivo(DIRETORIO_DESTINO, NOME_ARQUIVO)
-        registros_retornados = sum(1 for _ in open(caminho, "rb")) - 1
-        logger.registrar_sucesso("servicos", caminho, registros_retornados, json.dumps({"tipo": tipo}))
+        with open(caminho, encoding="utf-8-sig", newline="") as _f:
+            registros_retornados = sum(1 for _ in csv.reader(_f, delimiter=";")) - 1
+        logger.registrar_sucesso("produtos", caminho, registros_retornados, json.dumps({"tipo": tipo}))
         print(f"[OK] Arquivo salvo em: {caminho}")
 
     except Exception as e:
-        logger.registrar_erro("servicos", str(e))
+        logger.registrar_erro("produtos", str(e))
         raise
     finally:
         navegador.quit()
 
 
 if __name__ == "__main__":
-    from logs.logger_csv import LoggerCSV
-    executar_extracao(LoggerCSV(metodo="selenium"))
+    main()

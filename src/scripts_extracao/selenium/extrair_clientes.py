@@ -1,10 +1,11 @@
+import csv
 import json
 import os
 import sys
 import glob
 import time
 import shutil
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -17,7 +18,6 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import Select
 from webdriver_manager.chrome import ChromeDriverManager
 
 # ── Carregar variáveis de ambiente ───────────────────────────────────────────
@@ -28,11 +28,10 @@ ID_OFICINA        = os.environ["SISTEMA_ID_OFICINA"]
 USUARIO           = os.environ["SISTEMA_USUARIO"]
 SENHA             = os.environ["SISTEMA_SENHA"]
 
-URL_RELATORIO     = os.environ["SISTEMA_BASE_URL"] + "/P_LISTAR_OS.ASP"
+URL_RELATORIO     = os.environ["SISTEMA_BASE_URL"] + "/P_LISTAR_CLIENTES.ASP"
 
-DIRETORIO_DESTINO = os.path.join(os.environ["DOWNLOAD_BASE_SELENIUM"], "ordens_de_servico")
-
-NOME_ARQUIVO = f"{date.today().isoformat()}.csv"
+DIRETORIO_DESTINO = os.path.join(os.environ["DOWNLOAD_BASE_SELENIUM"], "clientes")
+NOME_ARQUIVO      = f"{date.today().isoformat()}.csv"
 
 
 # ── Configuração do navegador e download ─────────────────────────────────────
@@ -50,10 +49,6 @@ def configurar_navegador(diretorio_destino: str) -> webdriver.Chrome:
         service=Service(ChromeDriverManager().install()),
         options=options,
     )
-
-
-def aguardar_carregamento_resultados(espera: WebDriverWait) -> None:
-    espera.until(EC.invisibility_of_element_located((By.CSS_SELECTOR, ".swal2-container")))
 
 
 def aguardar_download_e_renomear_arquivo(diretorio_destino: str, nome_final: str, timeout: int = 30) -> str:
@@ -74,6 +69,11 @@ def aguardar_download_e_renomear_arquivo(diretorio_destino: str, nome_final: str
 
 
 # ── Extração ─────────────────────────────────────────────────────────────────
+def main() -> None:
+    from logs.logger_csv import LoggerCSV
+    executar_extracao(LoggerCSV(metodo="selenium"))
+
+
 def executar_extracao(logger: LoggerExtracao, data_inicio: str = None, data_fim: str = None, tipo: str = "incremental") -> None:
     navegador = configurar_navegador(DIRETORIO_DESTINO)
     espera    = WebDriverWait(navegador, 15)
@@ -88,49 +88,31 @@ def executar_extracao(logger: LoggerExtracao, data_inicio: str = None, data_fim:
         navegador.find_element(By.ID, "senha").send_keys(SENHA)
         time.sleep(0.5)
         navegador.find_element(By.ID, "btnLogar").click()
+
+        # Aguarda sair da página de login
         espera.until(lambda d: "login" not in d.current_url.lower())
+#        input("[PAUSA] Login OK — pressione Enter para navegar ao relatório...")
 
         # 2. Navegar até o relatório
         navegador.get(URL_RELATORIO)
+#        input("[PAUSA] Relatório carregado — pressione Enter para exportar...")
 
-        # 3. Selecionar filtro por data de saída
-        select = Select(espera.until(EC.presence_of_element_located((By.ID, "DATA_TIPO"))))
-        select.select_by_value("2")
-#        input("[PAUSA] Filtro verificado — pressione Enter para preencher datas...")
-
-        # 4. Preencher datas (se None, deixa em branco — sistema retorna tudo)
-        if data_inicio:
-            navegador.find_element(By.ID, "DATA_INICIAL").send_keys(data_inicio)
-            time.sleep(0.5)
-        if data_fim:
-            navegador.find_element(By.ID, "DATA_FINAL").send_keys(data_fim)
-            time.sleep(0.5)
-#        input("[PAUSA] Datas preenchidas — pressione Enter para buscar...")
-
-        # 5. Buscar — sem isso o export ignora o filtro e baixa todas as OSs
-        navegador.execute_script("buscarOrdensServico();")
-        aguardar_carregamento_resultados(espera)
-#        input("[PAUSA] Resultados carregados — pressione Enter para exportar...")
-
-        # 6. Exportar
+        # 3. Exportar — chama a função diretamente, sem abrir o dropdown
         navegador.execute_script("exportarCSV();")
 
-        # 7. Aguardar download, renomear e confirmar
+        # 4. Aguardar download, renomear e confirmar
         caminho = aguardar_download_e_renomear_arquivo(DIRETORIO_DESTINO, NOME_ARQUIVO)
-        registros_retornados = sum(1 for _ in open(caminho, "rb")) - 1
-        detalhes = json.dumps({"tipo": tipo, "periodo_consulta": {"data_inicio": data_inicio, "data_fim": data_fim}})
-        logger.registrar_sucesso("ordens_de_servico", caminho, registros_retornados, detalhes)
+        with open(caminho, encoding="utf-8-sig", newline="") as _f:
+            registros_retornados = sum(1 for _ in csv.reader(_f, delimiter=";")) - 1
+        logger.registrar_sucesso("clientes", caminho, registros_retornados, json.dumps({"tipo": tipo}))
         print(f"[OK] Arquivo salvo em: {caminho}")
-        if data_inicio or data_fim:
-            print(f"[OK] Período extraído: {data_inicio} → {data_fim}")
 
     except Exception as e:
-        logger.registrar_erro("ordens_de_servico", str(e))
+        logger.registrar_erro("clientes", str(e))
         raise
     finally:
         navegador.quit()
 
 
 if __name__ == "__main__":
-    from logs.logger_csv import LoggerCSV
-    executar_extracao(LoggerCSV(metodo="selenium"))
+    main()

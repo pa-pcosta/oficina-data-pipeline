@@ -26,7 +26,8 @@ CREATE TABLE dim_cliente (
     fl_tipo_pessoa   VARCHAR(2), -- 'PF' ou 'PJ'
     cpf              VARCHAR(14),
     cnpj             VARCHAR(18),
-    dt_cadastro      INT           REFERENCES dim_data(sk_data)
+    dt_cadastro      DATE,
+    dt_nascimento    DATE
 );
 
 CREATE TABLE dim_motocicleta (
