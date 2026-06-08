@@ -45,6 +45,7 @@ def transformar(caminho_csv: Path) -> pd.DataFrame:
 
     df = df.where(pd.notna(df), None)
     df = df.dropna(subset=["nk_ordem_de_servico"])
+    df = df[df["nk_ordem_de_servico"] != 1]  # exclui OS de exemplo do ERP
 
     return df
 

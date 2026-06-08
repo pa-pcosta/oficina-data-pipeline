@@ -41,11 +41,28 @@ def transformar(caminho_csv: Path) -> pd.DataFrame:
     ]]
 
     df["nk_motocicleta"] = pd.to_numeric(df["nk_motocicleta"], errors="coerce")
+    df["ano"]            = df["ano"].apply(extrair_ano_modelo)
 
     df = df.where(pd.notna(df), None)
     df = df.dropna(subset=["nk_motocicleta"])
 
     return df
+
+
+def extrair_ano_modelo(valor) -> str | None:
+    if not valor or pd.isna(valor):
+        return None
+    partes = str(valor).split("|")
+    # prefere ano_modelo (2º parte), fallback para ano_fabricacao (1ª parte)
+    ano_raw = partes[1].strip() if len(partes) > 1 and partes[1].strip() else partes[0].strip()
+    if not ano_raw or ano_raw == "0":
+        return None
+    try:
+        yy = int(ano_raw)
+    except ValueError:
+        return None
+    # 2 dígitos → 4 dígitos: >= 40 considera 1900s (ex: 89 → 1989), < 40 considera 2000s (ex: 15 → 2015)
+    return str(1900 + yy if yy >= 40 else 2000 + yy)
 
 
 if __name__ == "__main__":
