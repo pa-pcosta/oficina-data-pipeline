@@ -21,7 +21,7 @@ DIAS_SEMANA = {
     3: "quinta-feira", 4: "sexta-feira", 5: "sábado", 6: "domingo",
 }
 
-DATA_INICIO = date(2024, 1, 1)
+DATA_INICIO = date(2015, 1, 1)
 DATA_FIM    = date(2040, 12, 31)
 LOTE        = 500
 

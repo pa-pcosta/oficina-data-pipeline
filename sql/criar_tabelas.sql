@@ -71,3 +71,17 @@ CREATE TABLE fact_item_os (
     vl_desconto          NUMERIC(10,2),
     fl_aprovado          BOOLEAN
 );
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Permissões (somente service_role tem acesso de escrita)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON dim_cliente             TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON dim_motocicleta         TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON fact_ordem_de_servico   TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON fact_item_os            TO service_role;
+
+GRANT USAGE, SELECT ON SEQUENCE dim_cliente_sk_cliente_seq                           TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE dim_motocicleta_sk_motocicleta_seq                   TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE fact_ordem_de_servico_sk_ordem_de_servico_seq        TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE fact_item_os_sk_item_os_seq                          TO service_role;

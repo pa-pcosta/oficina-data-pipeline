@@ -49,6 +49,7 @@ def transformar(caminho_csv: Path) -> pd.DataFrame:
 
     df = df.where(pd.notna(df), None)
     df = df.dropna(subset=["nk_cliente"])
+    df = df[df["nk_cliente"] != 1]  # exclui cliente de exemplo do ERP
 
     return df
 
