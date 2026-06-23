@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dotenv import load_dotenv, find_dotenv
 from logs.logger import LoggerExtracao
+from storage.bucket import enviar
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -120,6 +121,7 @@ def executar_extracao(logger: LoggerExtracao, data_inicio: str = None, data_fim:
 
         # 7. Aguardar download, renomear e confirmar
         caminho = aguardar_download_e_renomear_arquivo(DIRETORIO_DESTINO, NOME_ARQUIVO)
+        enviar(Path(caminho).read_bytes(), f"dados_extraidos/itens_ordens_de_servico/{NOME_ARQUIVO}")
         with open(caminho, encoding="utf-8-sig", newline="") as _f:
             registros_retornados = sum(1 for _ in csv.reader(_f, delimiter=";")) - 1
         detalhes = json.dumps({"tipo": tipo, "periodo_consulta": {"data_inicio": data_inicio, "data_fim": data_fim}})
