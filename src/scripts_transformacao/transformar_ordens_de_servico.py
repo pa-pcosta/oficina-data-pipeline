@@ -27,7 +27,6 @@ def transformar(caminho_csv: Path) -> pd.DataFrame:
     df = pd.read_csv(caminho_csv, sep=";", encoding="utf-8-sig", dtype=str, on_bad_lines="skip")
 
     df["nk_ordem_de_servico"] = pd.to_numeric(df["Ordem de servico"], errors="coerce")
-    # "12 - GUSTAVO XAVIER" → 12
     df["nk_cliente"]     = df["Cliente"].str.extract(r"^(\d+)\s*-").squeeze()
     df["nk_cliente"]     = pd.to_numeric(df["nk_cliente"], errors="coerce")
     df["placa"]          = df["Placa"]

@@ -1,7 +1,6 @@
--- ─────────────────────────────────────────────────────────────────────────────
+-- ───────────────────────────────────────
 -- Tabelas de dimensão
--- ─────────────────────────────────────────────────────────────────────────────
-
+-- ───────────────────────────────────────
 CREATE TABLE dim_data (
     sk_data          INT           PRIMARY KEY, -- formato YYYYMMDD ex: 20260128
     dt_data_completa DATE          NOT NULL,
@@ -41,11 +40,9 @@ CREATE TABLE dim_motocicleta (
     ano              VARCHAR(4),
     chassi           VARCHAR(50)
 );
-
--- ─────────────────────────────────────────────────────────────────────────────
+-- ────────────────────────────────────────
 -- Tabelas FATO
--- ─────────────────────────────────────────────────────────────────────────────
-
+-- ────────────────────────────────────────
 CREATE TABLE fact_ordem_de_servico (
     sk_ordem_de_servico  BIGSERIAL     PRIMARY KEY,
     nk_ordem_de_servico  INT,                                              -- chave degenerada, sem FK
@@ -72,9 +69,9 @@ CREATE TABLE fact_item_os (
     fl_aprovado          BOOLEAN
 );
 
--- ─────────────────────────────────────────────────────────────────────────────
+-- ─────────────────────────────────────────────────────────────
 -- Permissões (somente service_role tem acesso de escrita)
--- ─────────────────────────────────────────────────────────────────────────────
+-- ─────────────────────────────────────────────────────────────
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON dim_cliente             TO service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON dim_motocicleta         TO service_role;
